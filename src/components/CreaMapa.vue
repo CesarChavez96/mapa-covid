@@ -36,6 +36,7 @@
           </l-popup>
       </l-marker>
       <l-marker
+        v-if="showEstados"
         v-for="estado in estados"
         :key="estado.estado"
         :lat-lng="estado.localizacion"
@@ -117,8 +118,7 @@ export default {
       paises: [],
       estados: [],
       location: [],
-      lugar: "Guanajuato",
-      currentLugar: "",
+      showEstados: false,
       covid: [],
     };
   },
@@ -128,9 +128,24 @@ export default {
     },
     centerUpdate(center) {
       this.currentCenter = center;
+      this.showEstado();
     },
     showLongText() {
       this.showParagraph = !this.showParagraph;
+    },
+    showEstado() {
+      if (
+        this.currentCenter.lat > 23.847735 - 10 &&
+        this.currentCenter.lat < 23.847735 + 10 &&
+        this.currentCenter.lng < -101 + 20 &&
+        this.currentCenter.lng > -101 - 20 &&
+        this.currentZoom > 4.1
+      ) {
+        this.showEstados = true;
+      } else {
+        this.showEstados = false;
+      }
+      console.log(this.showEstados);
     },
   },
   async created() {
@@ -158,9 +173,11 @@ export default {
         },
       });
       const infoestados = esta.data[0].states.fields;
-      console.log(esta);
       let loc = esta.data[0].loc;
       let estado = [];
+      let confirmMx = 0;
+      let recupeMx = 0;
+      let defunMx = 0;
       for (let i = 0; i < infoestados.length; i++) {
         let estad = infoestados[i].mapValue.fields;
         let loca = infoestados[i].mapValue.fields.state.stringValue;
@@ -173,8 +190,11 @@ export default {
           localizacion: loc[loca],
           fecha: `${f.getDate()} de ${meses[f.getMonth()]}`,
         };
+        confirmMx = confirmMx + parseInt(estad.confirmed.integerValue, 10);
+        recupeMx = recupeMx + parseInt(estad.recovered.integerValue);
+        defunMx = defunMx + parseInt(estad.deaths.integerValue);
       }
-
+      console.log(confirmMx);
       for (let es = 0; es < estado.length; es++) {
         estado[es].localizacion = latLng(
           estado[es].localizacion[0].LATITUDE,
@@ -202,9 +222,9 @@ export default {
         if (arreglo2[i].country === "Mexico") {
           promises1[const1] = {
             pais: arreglo2[i].country,
-            confirmados: arreglo2[i].confirmed,
-            recuperados: arreglo2[i].recovered,
-            defunciones: arreglo2[i].deaths,
+            confirmados: confirmMx,
+            recuperados: recupeMx,
+            defunciones: defunMx,
             localizacion: latLng(arreglo2[i].latitude, arreglo2[i].longitude),
             fecha: `${f.getDate()} de ${meses[f.getMonth()]}`,
           };
@@ -237,7 +257,7 @@ export default {
       console.log(this.paises);
 
       //this.currentCenter = this.currentCenter + 20;
-      console.log(this.currentCenter.lat + 20);
+      console.log(this.currentCenter.lng + 20);
 
       /*async function getMultiple(objectsToGet) {
         let users = [];
